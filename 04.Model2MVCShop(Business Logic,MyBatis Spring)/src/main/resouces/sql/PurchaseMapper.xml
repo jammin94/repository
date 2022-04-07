@@ -6,82 +6,98 @@
 
 <mapper namespace="PurchaseMapper">
  	
- 	
 	<resultMap id="purchaseSelectMap" type="purchase">
 		<result property="tranNo" 				column="tran_no" 			jdbcType="NUMERIC"/>
-		<result property="${purchaseProd.}"				column="prod_no" 			jdbcType="NUMERIC" />
-		<result property="prodDetail" 			column="prod_detail" 		jdbcType="VARCHAR" />
-		<result property="manuDate" 			column="manufacture_day" 	jdbcType="VARCHAR" />
-		<result property="price" 				column="price" 				jdbcType="NUMERIC" />
-		<result property="fileName" 			column="image_file" 		jdbcType="VARCHAR" />
-		<result property="regDate" 				column="reg_date" 			jdbcType="DATE" />
+		<association property="buyer" 			column="buyer_id" 			jdbcType="User"		
+		resultMap="sql/userSelectMap">
+		</association>
+		<association property="purchaseProd"	column="prod_no" 			jdbcType="Product" 	
+		resultMap="sql/productSelectMap">	
+		</association> 		
+		<result property="divyAddr" 			column="dlvy_addr" 			jdbcType="VARCHAR" />
+		<result property="divyDate" 			column="dlvy_date" 			jdbcType="DATE" />
+		<result property="divyRequest" 			column="dlvy_request" 		jdbcType="VARCHAR" />
+		<result property="orderDate" 			column="order_date" 		jdbcType="DATE" />
+		<result property="paymentOption" 		column="payment_option" 	jdbcType="VARCHAR" />
+		<result property="receiverName" 		column="receiver_name" 		jdbcType="VARCHAR" />
+		<result property="receiverPhone" 		column="receiver_phone" 	jdbcType="VARCHAR" />
+		<result property="tranCode" 			column="tran_status_code" 	jdbcType="CHAR" />
 	</resultMap>
+
+	 
 	
 	<!-- SQL : INSERT -->
-	<insert 	id="addProduct"		parameterType="product" >
+	<insert 	id="addPurchase"		parameterType="purchase" >
 	 	INSERT 
-		INTO product 
-		VALUES (seq_product_prod_no.NEXTVAL, #{prodName}, #{prodDetail:VARCHAR}, #{manuDate:VARCHAR}, #{price:NUMERIC}, 
-							#{fileName:VARCHAR}, SYSDATE)
+		INTO TRANSACTION 
+		VALUES (seq_transaction_prod_no.NEXTVAL, #{purchaseProd.prodNo}, #{buyer.userId}, #{paymentOption}, #{receiverName}, 
+							#{receiverPhone}, #{divyAddr}, #{divyRequest},1,SYSDATE,TO_DATE(#{divyDate},'YYYY-MM-DD'))
 	 </insert>
 	 
 	 <!-- SQL : SELECT ONE -->
-	 <select 	id="getProduct"	parameterType="int"	resultMap="productSelectMap">
-		SELECT * FROM PRODUCT 
-		WHERE PROD_NO = #{value}
+	 <select 	id="getPurchase"	parameterType="int"	resultMap="purchaseSelectMap">
+		SELECT * FROM TRANSACTION 
+		WHERE TRAN_NO = #{value}
 	 </select>
 	 
 	 <!-- SQL : UPDATE -->
-	 <update	id="updateProduct"	parameterType="product" >
-	   	UPDATE PRODUCT
+	 <update	id="updatePurchase"	parameterType="purchase" >
+	   	UPDATE TRANSACTION 
 	   	<set>
-	   		PROD_NAME = #{prodName},
-			PROD_DETAIL = #{prodDetail},
-			MANUFACTURE_DAY = #{manuDate},
-			PRICE =	#{price} 
+	   		PAYMENT_OPTION = #{paymentOption}, 
+			RECEIVER_NAME = #{receiverName}, 
+			RECEIVER_PHONE = #{receiverPhone}, 
+			DLVY_ADDR =	#{divyAddr}, 
+			DLVY_REQUEST = #{divyRequest}, 
+			DLVY_DATE = #{divyDate}
+			 
 	   	</set>
-	   	WHERE PROD_NO = #{prodNo}
+	   	WHERE TRAN_NO = #{tranNo}
 	 </update>
 	 
-	 <select id="getProductNo" parameterType="String" resultType="int">
-	 	SELECT * FROM PRODUCT WHERE PROD_NAME=#{value}
-	 </select>
+	
 		 
 	<!-- SQL : SELECT LIST -->
-	<select  id="getProductList"  parameterType="search"	resultMap="productSelectMap">
+	<select  id="getPurchaseList"  parameterType="Map"	resultMap="purchaseSelectMap">
 	  	SELECT *
 	  	FROM (	SELECT inner_table.* , ROWNUM AS row_seq
 	  					FROM		(	SELECT * 
-											FROM PRODUCT 
-											<if test="searchCondition != null">
+											FROM TRANSACTION 
+											<if test="#{search.searchCondition} != null">
 												<where>
-													<if test="searchCondition == 0 and searchKeyword !='' ">
-										 				PROD_NO LIKE '%' || #{searchKeyword} || '%' 
-													</if>
-													<if test="searchCondition == 1 and searchKeyword !='' ">
-										 				PROD_NAME LIKE '%' || #{searchKeyword} || '%' 
-													</if>
-													<if test="searchCondition == 2 and searchKeyword !='' ">
-										 				PRICE LIKE '%' || #{searchKeyword} || '%' 
-													</if>
+													BUYER_ID = #{buyerId} 
 												</where>
-											</if>
-											
-											<if test="order != null">
-													<if test="order == 'Desc' ">
-										 				ORDER BY PRICE DESC
-													</if>
-													<if test="order == 'Asc' ">
-										 				ORDER BY PRICE ASC
-													</if>
-											</if>
-											<if test="order == null">
-												ORDER BY PROD_NO
+												ORDER BY TRAN_NO
 											</if>
 											 ) inner_table
 						WHERE ROWNUM &lt;= #{endRowNum} )
 		WHERE row_seq BETWEEN #{startRowNum} AND #{endRowNum} 
 	 </select>
+	 
+	 
+	 <select  id="getSalesList"  parameterType="Map" 	resultMap="purchaseSelectMap">
+	  	SELECT *
+	  	FROM (	SELECT inner_table.* , ROWNUM AS row_seq
+	  					FROM		(	SELECT * 
+											FROM TRANSACTION 
+												<where>
+													BUYER_ID = #{buyerId} 
+												</where>
+												ORDER BY TRAN_NO
+											
+											 ) inner_table
+						WHERE ROWNUM &lt;= #{endRowNum} )
+		WHERE row_seq BETWEEN #{startRowNum} AND #{endRowNum} 
+	 </select>
+	 
+	 
+	 <update	id="updateTranCode"	parameterType="purchase" >
+	   	UPDATE TRANSACTION 
+	   	<set>
+	   		TRAN_STATUS_CODE=#{tranCode} 
+	   	</set>
+	   	WHERE TRAN_NO = #{tranNo}
+	 </update>
 	 	<!--  위 두번째 subQuery 의  
 	 			WHERE ROWNUM &lt;= #{endRowNum} ) 는
 	 			WHERE ROWNUM <= #{endRowNum} ) 의미이며..
