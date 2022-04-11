@@ -48,24 +48,24 @@
 	 </update>
 		 
 	<!-- SQL : SELECT LIST -->
-	<select  id="getUserList"  parameterType="search"	resultMap="userSelectMap">
+	<select  id="getUserList"  parameterType="map"	resultMap="userSelectMap">
 	  	SELECT *
 	  	FROM (	SELECT inner_table.* , ROWNUM AS row_seq
 	  					FROM		(	SELECT user_id , user_name , email
 											FROM users
-											<if test="searchCondition != null">
+											<if test="object.searchCondition != null">
 												<where>
-													<if test="searchCondition == 0 and searchKeyword !='' ">
-										 				user_id = #{searchKeyword}
+													<if test="object.searchCondition == 0 and object.searchKeyword !='' ">
+										 				user_id = #{object.searchKeyword}
 													</if>
-													<if test="searchCondition == 1 and searchKeyword !='' ">
-										 				user_name = #{searchKeyword}
+													<if test="object.searchCondition == 1 and object.searchKeyword !='' ">
+										 				user_name = #{object.searchKeyword}
 													</if>
 												</where>
 											</if>
 											ORDER BY user_id ) inner_table
-						WHERE ROWNUM &lt;= #{endRowNum} )
-		WHERE row_seq BETWEEN #{startRowNum} AND #{endRowNum} 
+						WHERE ROWNUM &lt;= #{object.endRowNum} )
+		WHERE row_seq BETWEEN #{object.startRowNum} AND #{object.endRowNum} 
 	 </select>
 	 	<!--  위 두번째 subQuery 의  
 	 			WHERE ROWNUM &lt;= #{endRowNum} ) 는

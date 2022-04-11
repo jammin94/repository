@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
 
 import com.model2.mvc.common.Search;
 import com.model2.mvc.service.domain.User;
@@ -24,6 +25,7 @@ import com.model2.mvc.service.user.UserService;
  * ㅇ @ContextConfiguration : Meta-data location 지정
  * ㅇ @Test : 테스트 실행 소스 지정
  */
+@WebAppConfiguration
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = { "classpath:config/commonservice.xml" })
 public class UserServiceTest {
@@ -139,7 +141,7 @@ public class UserServiceTest {
 	}
 	
 	 //==>  주석을 풀고 실행하면....
-	// @Test
+	 @Test
 	 public void testGetUserListAll() throws Exception{
 		 
 	 	Search search = new Search();
@@ -161,7 +163,7 @@ public class UserServiceTest {
 	 	search.setCurrentPage(1);
 	 	search.setPageSize(3);
 	 	search.setSearchCondition("0");
-	 	search.setSearchKeyword("");
+	 	search.setSearchKeyword("testUserId");
 	 	map = userService.getUserList(search);
 	 	
 	 	list = (List<Object>)map.get("list");

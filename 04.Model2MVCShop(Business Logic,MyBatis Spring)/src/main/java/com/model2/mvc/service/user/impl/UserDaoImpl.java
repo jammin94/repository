@@ -1,6 +1,8 @@
 package com.model2.mvc.service.user.impl;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,7 +45,9 @@ public class UserDaoImpl implements UserDao{
 	}
 
 	public List<User> getUserList(Search search) throws Exception {
-		return sqlSession.selectList("UserMapper.getUserList", search);
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("object",search);
+		return sqlSession.selectList("UserMapper.getUserList", map);
 	}
 
 	// 게시판 Page 처리를 위한 전체 Row(totalCount)  return

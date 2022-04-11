@@ -1,6 +1,8 @@
 package com.model2.mvc.service.product.impl;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.ibatis.session.SqlSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,7 +46,9 @@ public class ProductDaoImpl implements ProductDao{
 	}
 
 	public List<Product> getProductList(Search search) throws Exception {
-		return sqlSession.selectList("ProductMapper.getProductList", search);
+		Map<String, Object> map = new HashMap<String,Object>();
+		map.put("object", search);
+		return sqlSession.selectList("ProductMapper.getProductList", map);
 	}
 
 	// 게시판 Page 처리를 위한 전체 Row(totalCount)  return

@@ -8,12 +8,8 @@
  	
 	<resultMap id="purchaseSelectMap" type="purchase">
 		<result property="tranNo" 				column="tran_no" 			jdbcType="NUMERIC"/>
-		<association property="buyer" 			column="buyer_id" 			jdbcType="User"		
-		resultMap="sql/userSelectMap">
-		</association>
-		<association property="purchaseProd"	column="prod_no" 			jdbcType="Product" 	
-		resultMap="sql/productSelectMap">	
-		</association> 		
+		<result property="buyer.userId" 		column="buyer_id" 			jdbcType="VARCHAR"/>
+		<result property="purchaseProd.prodNo"	column="prod_no" 			jdbcType="INTEGER"/> 		
 		<result property="divyAddr" 			column="dlvy_addr" 			jdbcType="VARCHAR" />
 		<result property="divyDate" 			column="dlvy_date" 			jdbcType="DATE" />
 		<result property="divyRequest" 			column="dlvy_request" 		jdbcType="VARCHAR" />
@@ -27,11 +23,11 @@
 	 
 	
 	<!-- SQL : INSERT -->
-	<insert 	id="addPurchase"		parameterType="purchase" >
+	 <insert 	id="addPurchase"		parameterType="purchase">
 	 	INSERT 
 		INTO TRANSACTION 
-		VALUES (seq_transaction_prod_no.NEXTVAL, #{purchaseProd.prodNo}, #{buyer.userId}, #{paymentOption}, #{receiverName}, 
-							#{receiverPhone}, #{divyAddr}, #{divyRequest},1,SYSDATE,TO_DATE(#{divyDate},'YYYY-MM-DD'))
+		VALUES (seq_transaction_TRAN_no.NEXTVAL, #{purchaseProd.prodNo:INTEGER}, #{buyer.userId:VARCHAR}, #{paymentOption:VARCHAR}, 
+		#{receiverName:VARCHAR}, #{receiverPhone:VARCHAR}, #{divyAddr:VARCHAR}, #{divyRequest:VARCHAR},1,SYSDATE,TO_DATE(#{divyDate:DATE},'YYYY-MM-DD'))
 	 </insert>
 	 
 	 <!-- SQL : SELECT ONE -->
@@ -44,12 +40,12 @@
 	 <update	id="updatePurchase"	parameterType="purchase" >
 	   	UPDATE TRANSACTION 
 	   	<set>
-	   		PAYMENT_OPTION = #{paymentOption}, 
-			RECEIVER_NAME = #{receiverName}, 
-			RECEIVER_PHONE = #{receiverPhone}, 
-			DLVY_ADDR =	#{divyAddr}, 
-			DLVY_REQUEST = #{divyRequest}, 
-			DLVY_DATE = #{divyDate}
+	   		PAYMENT_OPTION = #{paymentOption:VARCHAR}, 
+			RECEIVER_NAME = #{receiverName:VARCHAR}, 
+			RECEIVER_PHONE = #{receiverPhone:VARCHAR}, 
+			DLVY_ADDR =	#{divyAddr:VARCHAR}, 
+			DLVY_REQUEST = #{divyRequest:VARCHAR}, 
+			DLVY_DATE = #{divyDate:VARCHAR}
 			 
 	   	</set>
 	   	WHERE TRAN_NO = #{tranNo}
@@ -58,34 +54,46 @@
 	
 		 
 	<!-- SQL : SELECT LIST -->
-	<select  id="getPurchaseList"  parameterType="Map"	resultMap="purchaseSelectMap">
-	  	SELECT *
-	  	FROM (	SELECT inner_table.* , ROWNUM AS row_seq
-	  					FROM		(	SELECT * 
-											FROM TRANSACTION 
-											<if test="#{search.searchCondition} != null">
-												<where>
-													BUYER_ID = #{buyerId} 
-												</where>
-												ORDER BY TRAN_NO
-											</if>
-											 ) inner_table
-						WHERE ROWNUM &lt;= #{endRowNum} )
-		WHERE row_seq BETWEEN #{startRowNum} AND #{endRowNum} 
-	 </select>
-	 
-	 
-	 <select  id="getSalesList"  parameterType="Map" 	resultMap="purchaseSelectMap">
+	<select  id="getPurchaseList"  parameterType="map"	resultMap="purchaseSelectMap">
 	  	SELECT *
 	  	FROM (	SELECT inner_table.* , ROWNUM AS row_seq
 	  					FROM		(	SELECT * 
 											FROM TRANSACTION 
 												<where>
 													BUYER_ID = #{buyerId} 
+													<if test="search.searchCondition != null">
+														<if test="search.searchCondition == 0 and search.searchKeyword !='' ">
+															AND TRAN_STATUS_CODE = #{search.searchKeyword} 
+														</if>
+													</if>	
 												</where>
 												ORDER BY TRAN_NO
 											
 											 ) inner_table
+						WHERE ROWNUM &lt;= #{search.endRowNum} )
+		WHERE row_seq BETWEEN #{search.startRowNum} AND #{search.endRowNum} 
+	 </select>
+	 
+	 
+	 <select  id="getSalesList"  parameterType="search" 	resultMap="purchaseSelectMap">
+	  	SELECT *
+	  	FROM (	SELECT inner_table.* , ROWNUM AS row_seq
+	  					FROM		(	SELECT * 
+											FROM TRANSACTION 
+												<if test="searchCondition != null">
+												<where>
+													<if test="searchCondition == 0 and searchKeyword !='' ">
+										 				BUYER_ID LIKE '%' || #{searchKeyword} || '%' 
+													</if>
+													<if test="searchCondition == 1 and searchKeyword !='' ">
+										 				PAYMENT_OPTION = #{searchKeyword} 
+													</if>
+													<if test="searchCondition == 2 and searchKeyword !='' ">
+										 				TRAN_STATUS_CODE = #{searchKeyword} 
+													</if>
+												</where>
+											</if> 
+						) inner_table
 						WHERE ROWNUM &lt;= #{endRowNum} )
 		WHERE row_seq BETWEEN #{startRowNum} AND #{endRowNum} 
 	 </select>
@@ -94,7 +102,7 @@
 	 <update	id="updateTranCode"	parameterType="purchase" >
 	   	UPDATE TRANSACTION 
 	   	<set>
-	   		TRAN_STATUS_CODE=#{tranCode} 
+	   		TRAN_STATUS_CODE=#{tranCode:CHAR} 
 	   	</set>
 	   	WHERE TRAN_NO = #{tranNo}
 	 </update>
@@ -110,18 +118,31 @@
 		-->
 	
 	<!-- SQL : SELECT ROW Count -->	 
-	 <select  id="getTotalCount"  parameterType="search"	 resultType="int">
-	  	SELECT COUNT(*) FROM(	SELECT * FROM PRODUCT 
+	<select  id="getTotalPurchaseCount"  parameterType="map"	 resultType="int">
+	  	SELECT COUNT(*) FROM(	SELECT * FROM TRANSACTION 
+							<where>
+								BUYER_ID = #{buyerId} 
+								<if test="search.searchCondition != null">
+									<if test="search.searchCondition == 0 and search.searchKeyword !='' ">
+					 					AND TRAN_STATUS_CODE = #{search.searchKeyword} 
+									</if>
+								</if>
+							</where>
+						 ) countTable						
+	 </select>
+	
+	 <select  id="getTotalSalesCount"  parameterType="search"	 resultType="int">
+	  	SELECT COUNT(*) FROM(	SELECT * FROM TRANSACTION 
 						<if test="searchCondition != null">
 							<where>
 								<if test="searchCondition == 0 and searchKeyword !='' ">
-					 				PROD_NO LIKE '%' || #{searchKeyword} || '%' 
+					 				BUYER_ID LIKE '%' || #{searchKeyword} || '%' 
 								</if>
 								<if test="searchCondition == 1 and searchKeyword !='' ">
-					 				PROD_NAME LIKE '%' || #{searchKeyword} || '%' 
+					 				PAYMENT_OPTION = #{searchKeyword} 
 								</if>
 								<if test="searchCondition == 2 and searchKeyword !='' ">
-					 				PRICE LIKE '%' || #{searchKeyword} || '%' 
+					 				TRAN_STATUS_CODE = #{searchKeyword} 
 								</if>
 							</where>
 						</if> ) countTable						
